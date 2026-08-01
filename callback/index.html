@@ -214,32 +214,40 @@
     // Scenario A: Successful Web or Mobile Native Authentication (Login / Signup / Magiclink)
     if (event === 'SIGNED_IN' && session && !isInviteFlow) {
       routeEl.textContent = "AUTH · SUCCESS";
-      setUIState('check', 'Access Authorized', 'Security tokens verified successfully. Redirecting you to the application...', 'Handshake complete');
       scrubUrl();
 
-      setTimeout(() => {
-        if (isMobile()) {
-          // Route target: native app via App Link. The native app has no
-          // access to this page's localStorage, so tokens genuinely have
-          // to travel through the URL here — this is the one hop where
-          // that's unavoidable. If the app isn't installed, the browser
-          // will land on /app/index.html instead, which already finds
-          // the session sitting in localStorage and doesn't need these
-          // query params at all.
-          const usp = new URLSearchParams({
-            access_token: session.access_token,
-            refresh_token: session.refresh_token,
-            expires_in: session.expires_in,
-            type: event.toLowerCase()
-          });
-          window.location.href = `${CONFIG.MOBILE_DEEPLINK}?${usp.toString()}`;
-        } else {
-          // Route target: standard desktop browser web application.
-          // No tokens in the URL — the web app's own Supabase client
-          // picks the session up from shared localStorage on load.
-          window.location.href = CONFIG.WEB_APP_URL;
-        }
-      }, 800);
+      if (isMobile()) {
+        // Route target: native app via App Link. The native app has no
+        // access to this page's localStorage, so tokens genuinely have
+        // to travel through the URL here — this is the one hop where
+        // that's unavoidable. If the app isn't installed, the browser
+        // will land on /app/index.html instead, which already finds
+        // the session sitting in localStorage and doesn't need these
+        // query params at all.
+        const usp = new URLSearchParams({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+          expires_in: session.expires_in,
+          type: event.toLowerCase()
+        });
+        const appUrl = `${CONFIG.MOBILE_DEEPLINK}?${usp.toString()}`;
+
+        // IMPORTANT: User click to open app
+        setUIState('check', 'Access Authorized', 'Security tokens verified successfully. Tap below to continue into the app.', 'Handshake complete');
+        actionContainer.innerHTML = `<a class="btn btn-primary" href="${appUrl}">Open App</a>`;
+        actionContainer.classList.remove('hidden');
+
+        // Best-effort automatic attempt too — some browsers/OS versions
+        // do still honor it, and if not, it safely falls through to
+        // /app/index.html rather than failing outright.
+        setTimeout(() => { window.location.href = appUrl; }, 800);
+      } else {
+        // Route target: standard desktop browser web application.
+        // No tokens in the URL — the web app's own Supabase client
+        // picks the session up from shared localStorage on load.
+        setUIState('check', 'Access Authorized', 'Security tokens verified successfully. Redirecting you to the application...', 'Handshake complete');
+        setTimeout(() => { window.location.href = CONFIG.WEB_APP_URL; }, 800);
+      }
       return;
     }
 
@@ -281,12 +289,17 @@
           const { error } = await supabase.auth.updateUser({ password: newPasswordInput.value });
           if (error) throw error;
 
-          statusTextEl.textContent = "Password updated! Preparing interface redirect...";
           recoveryForm.classList.add('hidden');
 
-          setTimeout(() => {
-            window.location.href = isMobile() ? CONFIG.MOBILE_DEEPLINK : CONFIG.WEB_APP_URL;
-          }, 1200);
+          if (isMobile()) {
+            statusTextEl.textContent = "Password updated! Tap below to continue into the app.";
+            actionContainer.innerHTML = `<a class="btn btn-primary" href="${CONFIG.MOBILE_DEEPLINK}">Open App</a>`;
+            actionContainer.classList.remove('hidden');
+            setTimeout(() => { window.location.href = CONFIG.MOBILE_DEEPLINK; }, 1200);
+          } else {
+            statusTextEl.textContent = "Password updated! Preparing interface redirect...";
+            setTimeout(() => { window.location.href = CONFIG.WEB_APP_URL; }, 1200);
+          }
 
         } catch (err) {
           formError.textContent = (err && err.message) || "Network transaction failure.";
@@ -301,11 +314,17 @@
     // Scenario E: Email address change confirmed
     if (event === 'USER_UPDATED' && linkType === 'email_change') {
       routeEl.textContent = "AUTH · EMAIL UPDATED";
-      setUIState('check', 'Email Address Confirmed', 'Your new email address has been verified. Redirecting you to the application...', 'Profile Updated');
       scrubUrl();
-      setTimeout(() => {
-        window.location.href = isMobile() ? CONFIG.MOBILE_DEEPLINK : CONFIG.WEB_APP_URL;
-      }, 1000);
+
+      if (isMobile()) {
+        setUIState('check', 'Email Address Confirmed', 'Your new email address has been verified. Tap below to continue into the app.', 'Profile Updated');
+        actionContainer.innerHTML = `<a class="btn btn-primary" href="${CONFIG.MOBILE_DEEPLINK}">Open App</a>`;
+        actionContainer.classList.remove('hidden');
+        setTimeout(() => { window.location.href = CONFIG.MOBILE_DEEPLINK; }, 1000);
+      } else {
+        setUIState('check', 'Email Address Confirmed', 'Your new email address has been verified. Redirecting you to the application...', 'Profile Updated');
+        setTimeout(() => { window.location.href = CONFIG.WEB_APP_URL; }, 1000);
+      }
       return;
     }
   });
