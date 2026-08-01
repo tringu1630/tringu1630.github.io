@@ -146,8 +146,15 @@
   };
 
   // 3. INITIALIZE CLIENT
+  // persistSession + autoRefreshToken are ON now: the session is written
+  // to localStorage on this origin. Since /app and the home page live on
+  // the SAME origin (rayzzz-lab.github.io), they can read that same
+  // localStorage entry themselves — so on desktop we no longer need to
+  // hand-carry access_token/refresh_token through the redirect URL at
+  // all. That removes them from browser history, server logs, and any
+  // Referer header the destination page might trigger.
   const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: true }
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
 
   // UI DOM Elements Bindings
@@ -210,20 +217,27 @@
       setUIState('check', 'Access Authorized', 'Security tokens verified successfully. Redirecting you to the application...', 'Handshake complete');
       scrubUrl();
 
-      const usp = new URLSearchParams({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-        expires_in: session.expires_in,
-        type: event.toLowerCase()
-      });
-
       setTimeout(() => {
         if (isMobile()) {
-          // Route target: Mobile client environment via app link
+          // Route target: native app via App Link. The native app has no
+          // access to this page's localStorage, so tokens genuinely have
+          // to travel through the URL here — this is the one hop where
+          // that's unavoidable. If the app isn't installed, the browser
+          // will land on /app/index.html instead, which already finds
+          // the session sitting in localStorage and doesn't need these
+          // query params at all.
+          const usp = new URLSearchParams({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+            expires_in: session.expires_in,
+            type: event.toLowerCase()
+          });
           window.location.href = `${CONFIG.MOBILE_DEEPLINK}?${usp.toString()}`;
         } else {
-          // Route target: Standard Desktop browser web application
-          window.location.href = `${CONFIG.WEB_APP_URL}#access_token=${session.access_token}&refresh_token=${session.refresh_token}&expires_in=${session.expires_in}&token_type=bearer`;
+          // Route target: standard desktop browser web application.
+          // No tokens in the URL — the web app's own Supabase client
+          // picks the session up from shared localStorage on load.
+          window.location.href = CONFIG.WEB_APP_URL;
         }
       }, 800);
       return;
