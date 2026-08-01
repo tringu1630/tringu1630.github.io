@@ -91,7 +91,7 @@
         <svg id="icon-load" viewBox="0 0 24 24" fill="none" stroke="#9a9a97" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" dur="1s" from="0 12 12" to="360 12 12" repeatCount="indefinite"/></circle></svg>
       </div>
 
-      <p class="status-text" id="statusText">If the app doesn't open automatically in a few seconds, you'll be redirected to the Home Page.</p>
+      <p class="status-text" id="statusText">If the app doesn't open automatically in a few seconds, you'll be redirected to the website.</p>
 
       <div id="actionContainer" style="margin-top: 20px;">
         <a class="btn btn-secondary" href="https://rayzzz-lab.github.io/" id="continueLink">Go to Home Page</a>
@@ -107,6 +107,16 @@
 
 <script>
   // ROUTER CONFIGURATION
+  // NOTE: by the time this page is reached, callback.html has already
+  // established the session and saved it to localStorage on this same
+  // origin (rayzzz-lab.github.io). The tokens in this page's query
+  // string exist only because they were needed for the native app to
+  // *possibly* intercept this link — they were never meant for a
+  // browser to read. Since the browser already has the session in
+  // localStorage, all this page needs to do is scrub those params from
+  // its own URL/history and send the browser to the home page with
+  // nothing in the URL at all. The home page's own Supabase client
+  // (persistSession: true) will pick the session up automatically.
   const WEB_APP_URL = "https://rayzzz-lab.github.io/";
   const FALLBACK_DELAY_MS = 2500;
 
@@ -118,26 +128,20 @@
   const updateClock = () => { document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', {hour12:false}); };
   updateClock(); setInterval(updateClock, 1000);
 
-  // If we ever reached this page, the OS did NOT intercept the App Link
-  // (app not installed, interception disabled, or a desktop browser).
-  // We still forward along any auth tokens so the web app can pick up
-  // the session exactly as the native app would have.
-  function buildFallbackUrl() {
-    const search = window.location.search; // e.g. ?access_token=...
-    const hash = window.location.hash;     // e.g. #access_token=...
-    let url = WEB_APP_URL;
-    if (search) url += search;
-    if (hash) url += hash;
-    return url;
+  // Scrub any leftover token params from this page's own URL/history
+  // right away, regardless of whether they end up used for anything.
+  if (window.location.search) {
+    history.replaceState(null, '', window.location.pathname);
   }
 
-  const fallbackUrl = buildFallbackUrl();
-  continueLink.href = fallbackUrl;
+  continueLink.href = WEB_APP_URL;
 
-  // Auto-redirect after a short grace period, in case the app link
-  // interception was just slow or genuinely failed.
+  // If we ever reached this page, the OS did NOT intercept the App Link
+  // (app not installed, interception disabled, or a desktop browser).
+  // Auto-redirect after a short grace period, in case interception was
+  // just slow rather than genuinely failed.
   const redirectTimer = setTimeout(() => {
-    window.location.href = fallbackUrl;
+    window.location.href = WEB_APP_URL;
   }, FALLBACK_DELAY_MS);
 
   // If the page becomes hidden (app opened via interception happening
