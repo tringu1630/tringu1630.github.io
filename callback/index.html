@@ -146,7 +146,7 @@
   };
 
   // 3. INITIALIZE CLIENT
-  // persistSession + autoRefreshToken are ON now: the session is written
+  // persistSession + autoRefreshToken are ON: the session is written
   // to localStorage on this origin. Since /app and the home page live on
   // the SAME origin (rayzzz-lab.github.io), they can read that same
   // localStorage entry themselves — so on desktop we no longer need to
@@ -232,19 +232,23 @@
         });
         const appUrl = `${CONFIG.MOBILE_DEEPLINK}?${usp.toString()}`;
 
-        // IMPORTANT: User click to open app
+        // IMPORTANT: User click to open app.
+        // No automatic redirect here on purpose: opening a native app via
+        // App Link / Universal Link generally requires a real user
+        // gesture (a tap). A programmatic window.location.href fired
+        // from a setTimeout is not a user gesture, so the OS usually
+        // downgrades it to just loading the fallback web page — which
+        // both defeats the deeplink AND consumes the navigation before
+        // the person has a chance to tap the button themselves.
         setUIState('check', 'Access Authorized', 'Security tokens verified successfully. Tap below to continue into the app.', 'Handshake complete');
         actionContainer.innerHTML = `<a class="btn btn-primary" href="${appUrl}">Open App</a>`;
         actionContainer.classList.remove('hidden');
-
-        // Best-effort automatic attempt too — some browsers/OS versions
-        // do still honor it, and if not, it safely falls through to
-        // /app/index.html rather than failing outright.
-        setTimeout(() => { window.location.href = appUrl; }, 800);
       } else {
         // Route target: standard desktop browser web application.
         // No tokens in the URL — the web app's own Supabase client
         // picks the session up from shared localStorage on load.
+        // A programmatic redirect here is fine: it's a normal page
+        // navigation, not an OS-level app-open that needs a user gesture.
         setUIState('check', 'Access Authorized', 'Security tokens verified successfully. Redirecting you to the application...', 'Handshake complete');
         setTimeout(() => { window.location.href = CONFIG.WEB_APP_URL; }, 800);
       }
@@ -292,10 +296,11 @@
           recoveryForm.classList.add('hidden');
 
           if (isMobile()) {
+            // Same reasoning as Scenario A: leave it to a real tap,
+            // don't fire an automatic window.location.href here.
             statusTextEl.textContent = "Password updated! Tap below to continue into the app.";
             actionContainer.innerHTML = `<a class="btn btn-primary" href="${CONFIG.MOBILE_DEEPLINK}">Open App</a>`;
             actionContainer.classList.remove('hidden');
-            setTimeout(() => { window.location.href = CONFIG.MOBILE_DEEPLINK; }, 1200);
           } else {
             statusTextEl.textContent = "Password updated! Preparing interface redirect...";
             setTimeout(() => { window.location.href = CONFIG.WEB_APP_URL; }, 1200);
@@ -317,10 +322,11 @@
       scrubUrl();
 
       if (isMobile()) {
+        // Same reasoning as Scenario A: leave it to a real tap,
+        // don't fire an automatic window.location.href here.
         setUIState('check', 'Email Address Confirmed', 'Your new email address has been verified. Tap below to continue into the app.', 'Profile Updated');
         actionContainer.innerHTML = `<a class="btn btn-primary" href="${CONFIG.MOBILE_DEEPLINK}">Open App</a>`;
         actionContainer.classList.remove('hidden');
-        setTimeout(() => { window.location.href = CONFIG.MOBILE_DEEPLINK; }, 1000);
       } else {
         setUIState('check', 'Email Address Confirmed', 'Your new email address has been verified. Redirecting you to the application...', 'Profile Updated');
         setTimeout(() => { window.location.href = CONFIG.WEB_APP_URL; }, 1000);
