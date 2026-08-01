@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opening App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --panel: #141414;
+    --panel-2: #101010;
+    --border: #262626;
+    --border-soft: #1c1c1c;
+    --text-hi: #f2f2ef;
+    --text-mid: #9a9a97;
+    --text-dim: #565654;
+    --white: #ffffff;
+    --error: #ff4a4a;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --sans: 'Inter', -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text-hi); font-family: var(--sans);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px; position: relative; -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none;
+    background-image: radial-gradient(circle, #1e1e1c 1px, transparent 1px); background-size: 28px 28px;
+    mask-image: radial-gradient(ellipse 60% 50% at 50% 40%, #000 10%, transparent 75%);
+  }
+  .stage { width: 100%; max-width: 500px; position: relative; z-index: 1; }
+  .statusbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 4px 14px 4px; font-family: var(--mono); font-size: 11px; color: var(--text-dim); letter-spacing: .08em;
+  }
+  .id { display: flex; align-items: center; gap: 8px; color: var(--text-mid); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); }
+  .dot.live { background: var(--white); animation: pulse 2s infinite; }
+  .dot.err { background: var(--error); animation: none; }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255,255,255,.35); }
+    70% { box-shadow: 0 0 0 6px rgba(255,255,255,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+  .panel-header { padding: 24px; border-bottom: 1px solid var(--border-soft); background: linear-gradient(180deg, #171717 0%, #141414 100%); }
+  .eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 6px; }
+  h1 { font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+  .content { padding: 28px 24px; }
+  .badge { width: 44px; height: 44px; border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; background: var(--panel-2); }
+  .badge svg { width: 18px; height: 18px; }
+  .status-text { font-size: 14px; color: var(--text-mid); line-height: 1.6; margin-bottom: 8px; }
+  .status-text code { font-family: var(--mono); font-size: 12px; background: var(--panel-2); border: 1px solid var(--border-soft); padding: 2px 5px; border-radius: 3px; color: var(--text-hi); word-break: break-word; }
+
+  .btn { font-family: var(--sans); font-size: 14px; font-weight: 600; padding: 12px 18px; border-radius: 4px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; transition: background .12s ease, border-color .12s ease; width: 100%; margin-top: 8px; }
+  .btn-primary { background: var(--white); color: #0a0a0a; }
+  .btn-primary:hover { background: #e4e4e1; }
+  .btn-secondary { background: transparent; color: var(--text-hi); border-color: var(--border); }
+  .btn-secondary:hover { border-color: var(--text-mid); }
+
+  .hidden { display: none !important; }
+  footer { text-align: center; padding-top: 18px; font-family: var(--mono); font-size: 10.5px; color: var(--text-dim); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dot.live { animation: none; }
+    #icon-load circle animateTransform { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="statusbar">
+    <div class="id"><span class="dot live" id="statusDot"></span><span id="statusRoute">APP · LAUNCH</span></div>
+    <div id="clock">--:--:--</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="eyebrow" id="eyebrow">App Launcher</div>
+      <h1 id="panelTitle">Opening App...</h1>
+    </div>
+
+    <div class="content">
+      <div class="badge" id="badgeContainer">
+        <svg id="icon-load" viewBox="0 0 24 24" fill="none" stroke="#9a9a97" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" dur="1s" from="0 12 12" to="360 12 12" repeatCount="indefinite"/></circle></svg>
+      </div>
+
+      <p class="status-text" id="statusText">If the app doesn't open automatically in a few seconds, you'll be redirected to the Home Page.</p>
+
+      <div id="actionContainer" style="margin-top: 20px;">
+        <a class="btn btn-secondary" href="https://rayzzz-lab.github.io/" id="continueLink">Go to Home Page</a>
+      </div>
+    </div>
+  </div>
+  <footer>Secure Local Sandbox · No External Tracking</footer>
+</div>
+
+<div class="hidden">
+  <svg id="svg-alert" viewBox="0 0 24 24" fill="none" stroke="#9a9a97" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+</div>
+
+<script>
+  // ROUTER CONFIGURATION
+  const WEB_APP_URL = "https://rayzzz-lab.github.io/";
+  const FALLBACK_DELAY_MS = 2500;
+
+  const titleEl = document.getElementById('panelTitle');
+  const statusTextEl = document.getElementById('statusText');
+  const continueLink = document.getElementById('continueLink');
+
+  // Live clock UI update loop
+  const updateClock = () => { document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', {hour12:false}); };
+  updateClock(); setInterval(updateClock, 1000);
+
+  // If we ever reached this page, the OS did NOT intercept the App Link
+  // (app not installed, interception disabled, or a desktop browser).
+  // We still forward along any auth tokens so the web app can pick up
+  // the session exactly as the native app would have.
+  function buildFallbackUrl() {
+    const search = window.location.search; // e.g. ?access_token=...
+    const hash = window.location.hash;     // e.g. #access_token=...
+    let url = WEB_APP_URL;
+    if (search) url += search;
+    if (hash) url += hash;
+    return url;
+  }
+
+  const fallbackUrl = buildFallbackUrl();
+  continueLink.href = fallbackUrl;
+
+  // Auto-redirect after a short grace period, in case the app link
+  // interception was just slow or genuinely failed.
+  const redirectTimer = setTimeout(() => {
+    window.location.href = fallbackUrl;
+  }, FALLBACK_DELAY_MS);
+
+  // If the page becomes hidden (app opened via interception happening
+  // late, or the user switched away), don't force the redirect.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      clearTimeout(redirectTimer);
+    }
+  });
+</script>
+
+</body>
+</html>
