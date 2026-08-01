@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auth Callback</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --panel: #141414;
+    --panel-2: #101010;
+    --border: #262626;
+    --border-soft: #1c1c1c;
+    --text-hi: #f2f2ef;
+    --text-mid: #9a9a97;
+    --text-dim: #565654;
+    --white: #ffffff;
+    --error: #ff4a4a;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --sans: 'Inter', -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text-hi); font-family: var(--sans);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px; position: relative; -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none;
+    background-image: radial-gradient(circle, #1e1e1c 1px, transparent 1px); background-size: 28px 28px;
+    mask-image: radial-gradient(ellipse 60% 50% at 50% 40%, #000 10%, transparent 75%);
+  }
+  .stage { width: 100%; max-width: 500px; position: relative; z-index: 1; }
+  .statusbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 4px 14px 4px; font-family: var(--mono); font-size: 11px; color: var(--text-dim); letter-spacing: .08em;
+  }
+  .id { display: flex; align-items: center; gap: 8px; color: var(--text-mid); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); }
+  .dot.live { background: var(--white); animation: pulse 2s infinite; }
+  .dot.err { background: var(--error); animation: none; }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255,255,255,.35); }
+    70% { box-shadow: 0 0 0 6px rgba(255,255,255,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+  .panel-header { padding: 24px; border-bottom: 1px solid var(--border-soft); background: linear-gradient(180deg, #171717 0%, #141414 100%); }
+  .eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 6px; }
+  h1 { font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+  .content { padding: 28px 24px; }
+  .badge { width: 44px; height: 44px; border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; background: var(--panel-2); }
+  .badge svg { width: 18px; height: 18px; }
+  .status-text { font-size: 14px; color: var(--text-mid); line-height: 1.6; margin-bottom: 8px; }
+  .status-text code { font-family: var(--mono); font-size: 12px; background: var(--panel-2); border: 1px solid var(--border-soft); padding: 2px 5px; border-radius: 3px; color: var(--text-hi); word-break: break-word; }
+
+  /* Form & Inputs styling */
+  form { display: flex; flex-direction: column; gap: 16px; margin-top: 24px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim); }
+  .field input { width: 100%; background: var(--panel-2); border: 1px solid var(--border); color: var(--text-hi); font-size: 14px; padding: 12px; border-radius: 4px; transition: border-color .15s ease; }
+  .field input:focus { outline: none; border-color: var(--text-mid); }
+  .hint { font-family: var(--mono); font-size: 10.5px; color: var(--text-dim); }
+
+  /* Buttons */
+  .btn { font-family: var(--sans); font-size: 14px; font-weight: 600; padding: 12px 18px; border-radius: 4px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; transition: background .12s ease, border-color .12s ease; width: 100%; margin-top: 8px; }
+  .btn-primary { background: var(--white); color: #0a0a0a; }
+  .btn-primary:hover { background: #e4e4e1; }
+  .btn-primary:disabled { background: var(--text-dim); color: var(--panel); cursor: not-allowed; }
+  .btn-secondary { background: transparent; color: var(--text-hi); border-color: var(--border); }
+  .btn-secondary:hover { border-color: var(--text-mid); }
+
+  .error-banner { color: var(--error); font-family: var(--mono); font-size: 12px; margin-top: 8px; display: none; }
+  .error-banner.show { display: block; }
+  .hidden { display: none !important; }
+  footer { text-align: center; padding-top: 18px; font-family: var(--mono); font-size: 10.5px; color: var(--text-dim); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dot.live { animation: none; }
+    #icon-load circle animateTransform { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="statusbar">
+    <div class="id"><span class="dot live" id="statusDot"></span><span id="statusRoute">AUTH · ROUTER</span></div>
+    <div id="clock">--:--:--</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="eyebrow" id="eyebrow">Supabase Environment</div>
+      <h1 id="panelTitle">Initializing Session...</h1>
+    </div>
+
+    <div class="content">
+      <!-- Dynamic SVG Visual Badge -->
+      <div class="badge" id="badgeContainer">
+        <svg id="icon-load" viewBox="0 0 24 24" fill="none" stroke="#9a9a97" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" dur="1s" from="0 12 12" to="360 12 12" repeatCount="indefinite"/></circle></svg>
+      </div>
+
+      <!-- Main Status message -->
+      <p class="status-text" id="statusText">Connecting to secure authentication node, please wait...</p>
+
+      <!-- Password Recovery Form (Hidden by default) -->
+      <form id="recoveryForm" class="hidden" novalidate>
+        <div class="field">
+          <label for="newPassword">New Account Password</label>
+          <input type="password" id="newPassword" minlength="8" required placeholder="Minimum 8 characters" autocomplete="new-password">
+          <span class="hint">At least 8 characters.</span>
+        </div>
+        <button type="submit" class="btn btn-primary" id="submitBtn">Update Password</button>
+        <div id="formError" class="error-banner"></div>
+      </form>
+
+      <!-- Action Button Container (For Errors or Static Fallbacks) -->
+      <div id="actionContainer" class="hidden" style="margin-top: 20px;"></div>
+    </div>
+  </div>
+  <footer>Secure Local Sandbox · No External Tracking</footer>
+</div>
+
+<!-- SVGs Templates referenced by JS -->
+<div class="hidden">
+  <svg id="svg-check" viewBox="0 0 24 24" fill="none" stroke="#f2f2ef" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+  <svg id="svg-cross" viewBox="0 0 24 24" fill="none" stroke="#ff4a4a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+  <svg id="svg-key" viewBox="0 0 24 24" fill="none" stroke="#f2f2ef" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+  <svg id="svg-alert" viewBox="0 0 24 24" fill="none" stroke="#9a9a97" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+</div>
+
+<!-- 1. IMPORT SUPABASE SDK VIA CDN -->
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+  // 2. GLOBAL ROUTER CONFIGURATION
+  const CONFIG = {
+    SUPABASE_URL: "https://necykvglgzbqsvdgjlhq.supabase.co",
+    SUPABASE_ANON_KEY: "sb_publishable_UHASvDdOBglmfzuPJdm8jw_gwxooNFR",
+    MOBILE_DEEPLINK: "https://rayzzz-lab.github.io/app", // DeepLink to the app
+    WEB_APP_URL: "https://rayzzz-lab.github.io/home" // Web Dashboard / Landing Page / Home Page
+  };
+
+  // 3. INITIALIZE CLIENT
+  const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: true }
+  });
+
+  // UI DOM Elements Bindings
+  const titleEl = document.getElementById('panelTitle');
+  const eyebrowEl = document.getElementById('eyebrow');
+  const statusTextEl = document.getElementById('statusText');
+  const routeEl = document.getElementById('statusRoute');
+  const dotEl = document.getElementById('statusDot');
+  const badgeContainer = document.getElementById('badgeContainer');
+  const recoveryForm = document.getElementById('recoveryForm');
+  const actionContainer = document.getElementById('actionContainer');
+
+  // Device context sniffer
+  const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  // Live Clock UI update loop
+  const updateClock = () => { document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', {hour12:false}); };
+  updateClock(); setInterval(updateClock, 1000);
+
+  // Small helper to display error text without HTML injection risk
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // Inject SVG utility
+  function setUIState(type, title, text, eyebrowText = "Supabase Auth") {
+    titleEl.textContent = title;
+    statusTextEl.innerHTML = text;
+    eyebrowEl.textContent = eyebrowText;
+    if (type !== 'loading') {
+      const template = document.getElementById(`svg-${type}`);
+      if (template) {
+        badgeContainer.innerHTML = '';
+        badgeContainer.appendChild(template.cloneNode(true));
+      }
+    }
+  }
+
+  // Once we've consumed the tokens from the URL, scrub them so they
+  // don't linger in browser history / get leaked via referrer headers.
+  function scrubUrl() {
+    history.replaceState(null, '', window.location.pathname + window.location.search.replace(/([?&])(access_token|refresh_token|expires_in|token_type|type)=[^&]*/g, '').replace(/^&/, '?').replace(/\?&/, '?').replace(/\?$/, ''));
+  }
+
+  // 4. LISTEN FOR AUTHENTICATION EVENTS SCENARIOS
+  supabase.auth.onAuthStateChange((event, session) => {
+    console.log("Captured Auth Event:", event);
+
+    // The "type" query param Supabase appends to the redirect link tells us
+    // *why* we got a session, which matters because "invite" and "recovery"
+    // both need the set-password form rather than a silent redirect.
+    const linkType = new URLSearchParams(window.location.hash.slice(1)).get('type');
+    const isInviteFlow = event === 'SIGNED_IN' && linkType === 'invite';
+
+    // Scenario A: Successful Web or Mobile Native Authentication (Login / Signup / Magiclink)
+    if (event === 'SIGNED_IN' && session && !isInviteFlow) {
+      routeEl.textContent = "AUTH · SUCCESS";
+      setUIState('check', 'Access Authorized', 'Security tokens verified successfully. Redirecting you to the application...', 'Handshake complete');
+      scrubUrl();
+
+      const usp = new URLSearchParams({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+        expires_in: session.expires_in,
+        type: event.toLowerCase()
+      });
+
+      setTimeout(() => {
+        if (isMobile()) {
+          // Route target: Mobile client environment via app link
+          window.location.href = `${CONFIG.MOBILE_DEEPLINK}?${usp.toString()}`;
+        } else {
+          // Route target: Standard Desktop browser web application
+          window.location.href = `${CONFIG.WEB_APP_URL}#access_token=${session.access_token}&refresh_token=${session.refresh_token}&expires_in=${session.expires_in}&token_type=bearer`;
+        }
+      }, 800);
+      return;
+    }
+
+    // Scenario B: Password Reset Injected Tokens Flow
+    // (Also handles "invite" links — an invited user has no password yet,
+    // so we reuse the same set-password form instead of silently signing
+    // them in with no way to choose credentials.)
+    if (event === 'PASSWORD_RECOVERY' || isInviteFlow) {
+      routeEl.textContent = isInviteFlow ? "AUTH · INVITE" : "AUTH · RECOVERY";
+      setUIState(
+        'key',
+        isInviteFlow ? 'Welcome — Set Your Password' : 'Reset Account Password',
+        isInviteFlow
+          ? 'Your account was created. Choose a password to finish setting up access.'
+          : 'Please type a new secure password for your profile below.',
+        isInviteFlow ? 'Account Activation' : 'Security Protocol'
+      );
+      recoveryForm.classList.remove('hidden');
+      scrubUrl();
+
+      recoveryForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const newPasswordInput = document.getElementById('newPassword');
+        const submitBtn = document.getElementById('submitBtn');
+        const formError = document.getElementById('formError');
+
+        formError.classList.remove('show');
+
+        if (newPasswordInput.value.length < 8) {
+          formError.textContent = "Password must be at least 8 characters.";
+          formError.classList.add('show');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        statusTextEl.textContent = "Updating database records...";
+
+        try {
+          const { error } = await supabase.auth.updateUser({ password: newPasswordInput.value });
+          if (error) throw error;
+
+          statusTextEl.textContent = "Password updated! Preparing interface redirect...";
+          recoveryForm.classList.add('hidden');
+
+          setTimeout(() => {
+            window.location.href = isMobile() ? CONFIG.MOBILE_DEEPLINK : CONFIG.WEB_APP_URL;
+          }, 1200);
+
+        } catch (err) {
+          formError.textContent = (err && err.message) || "Network transaction failure.";
+          formError.classList.add('show');
+          statusTextEl.textContent = "Update action rejected.";
+          submitBtn.disabled = false;
+        }
+      };
+      return;
+    }
+
+    // Scenario E: Email address change confirmed
+    if (event === 'USER_UPDATED' && linkType === 'email_change') {
+      routeEl.textContent = "AUTH · EMAIL UPDATED";
+      setUIState('check', 'Email Address Confirmed', 'Your new email address has been verified. Redirecting you to the application...', 'Profile Updated');
+      scrubUrl();
+      setTimeout(() => {
+        window.location.href = isMobile() ? CONFIG.MOBILE_DEEPLINK : CONFIG.WEB_APP_URL;
+      }, 1000);
+      return;
+    }
+  });
+
+  // Scenario C: Catching Error parameters sent by OAuth Providers (e.g., Google OAuth rejection)
+  const urlParams = new URLSearchParams(window.location.search);
+  const hashParamsInit = new URLSearchParams(window.location.hash.slice(1));
+  const oauthError = urlParams.get('error') || hashParamsInit.get('error');
+
+  if (oauthError) {
+    dotEl.className = "dot err";
+    routeEl.textContent = "AUTH · FAILURE";
+    const rawDescription = urlParams.get('error_description') || hashParamsInit.get('error_description') || oauthError;
+    const cleanErrorDescription = escapeHtml(decodeURIComponent(rawDescription));
+
+    setUIState('cross', 'Authentication Failed', `The identity provider returned an operational issue: <code>${cleanErrorDescription}</code>`, 'Token rejection');
+
+    actionContainer.innerHTML = `<a class="btn btn-secondary" href="${CONFIG.WEB_APP_URL}">Return to Main Site</a>`;
+    actionContainer.classList.remove('hidden');
+  }
+
+  // Scenario D: Safety Timeout / Idle (Triggered if page is accessed directly without
+  // tokens, or if the tokens present in the URL are expired/already used, in which case
+  // Supabase never fires an auth event at all).
+  setTimeout(() => {
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    const hadTokenAttempt = hashParams.get('access_token') || hashParams.get('type');
+
+    if (!hashParams.get('access_token') && !oauthError && titleEl.textContent === 'Initializing Session...') {
+      dotEl.className = "dot err";
+      routeEl.textContent = "AUTH · IDLE";
+      setUIState(
+        'alert',
+        hadTokenAttempt ? 'Link Expired or Already Used' : 'No Session Context',
+        hadTokenAttempt
+          ? 'This link is no longer valid — it may have expired or been used already. Please request a new one.'
+          : 'This endpoint requires explicit token arguments to initialize validation routines.',
+        'System Standby'
+      );
+      actionContainer.innerHTML = `<a class="btn btn-secondary" href="${CONFIG.WEB_APP_URL}">Go to Dashboard Home</a>`;
+      actionContainer.classList.remove('hidden');
+    }
+  }, 3000);
+</script>
+
+</body>
+</html>
